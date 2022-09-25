@@ -43,7 +43,7 @@ rec {
       # allow for userspace to shut kernel down
       PROC_FS = true;
       MAGIC_SYSRQ = true;
-      
+
       # needed for guest to tell qemu to shutdown
       PCI = true;
       ACPI = true;
@@ -127,10 +127,10 @@ rec {
       mkdir -p $out/bin $out/lib
 
       # Copy what we need from Glibc.
-      cp -p ${stdenv.glibc.out}/lib/ld-linux*.so.? $out/lib
-      cp -p ${stdenv.glibc.out}/lib/libc.so.* $out/lib
-      cp -p ${stdenv.glibc.out}/lib/libm.so.* $out/lib
-      cp -p ${stdenv.glibc.out}/lib/libresolv.so.* $out/lib
+      cp -p ${glibc}/lib/ld-linux*.so.? $out/lib
+      cp -p ${glibc}/lib/libc.so.* $out/lib
+      cp -p ${glibc}/lib/libm.so.* $out/lib
+      cp -p ${glibc}/lib/libresolv.so.* $out/lib
 
       # Copy BusyBox.
       cp -pd ${busybox}/bin/* $out/bin
@@ -145,11 +145,6 @@ rec {
           fi
       done
     '';
-
-  closurePaths = path:
-    let closure = closureInfo { rootPaths = path; };
-        text = lib.fileContents "${closure}/store-paths";
-    in lib.splitString "\n" text;
 
   stage1 = writeScript "vm-run-stage1" ''
     #! ${initrdUtils}/bin/ash -e
@@ -209,7 +204,7 @@ rec {
 
     stores="$( ( find /mnt/store -mindepth 1 -maxdepth 1; echo /nix/store ) | paste -sd :)"
     echo stores: $stores
-    mount -t overlay overlay -o "ro,lowerdir=$stores" /nix/store 
+    mount -t overlay overlay -o "ro,lowerdir=$stores" /nix/store
 
     if [ -n "$jobDesc" ]; then
       . "$jobDesc"
@@ -236,14 +231,14 @@ rec {
     ];
   };
 
-  squashfsTools = pkgs.squashfsTools.override { lz4Support = true; };
-  mkSquashFs = settings: contents: bitflip.flipTwice (stdenv.mkDerivation {
+  squashfsTools = pkgs.squashfsTools;
+  mkSquashFs = settings: contents: /*bitflip.flipTwice*/ (stdenv.mkDerivation {
     name = "squashfs.img";
     nativeBuildInputs = [ squashfsTools ];
     buildCommand = ''
       closureInfo=${closureInfo { rootPaths = contents; }}
       mksquashfs $(cat $closureInfo/store-paths) $out \
-        -keep-as-directory -all-root -b 1048576 ${settings} 
+        -keep-as-directory -all-root -b 1048576 ${settings}
     '';
   });
 
@@ -354,7 +349,6 @@ rec {
   commonQemuOptions = ''
     -only-migratable \
     -nographic -no-reboot \
-    -cpu IvyBridge \
     -enable-kvm \
     -net none -m "$mem" \
     -device virtio-rng-pci,max-bytes=1024,period=1000 \
@@ -363,9 +357,9 @@ rec {
     -device pvpanic \
     -chardev pipe,path="$job"/control,id=control \
     -device virtserialport,chardev=control,id=control \
-    -qmp-pretty unix:"$job"/qmp,nowait \'';
+    -qmp-pretty unix:"$job"/qmp \'';
 
-  qemuDriveOptions = lib.concatMapStringsSep " " (d: "-drive if=virtio,readonly,format=raw,file=${d}");
+  qemuDriveOptions = lib.concatMapStringsSep " " (d: "-drive if=virtio,readonly=on,format=raw,file=${d}");
 
   suspensionUseCompression = true;
   suspensionWriteCommand =
@@ -375,12 +369,11 @@ rec {
 
   suspensionReadCommand =
     if suspensionUseCompression
-    then "${lz4}/bin/lz4 -d --favor-decSpeed"
+    then "${lz4}/bin/lz4 -dc --favor-decSpeed"
     else "cat ";
 
   run = args@{ name, fullPath, initrdPath, storeDrives, mem, desc, ... }: writeShellScriptBin "run-qemu" ''
     # ${name}
-    # needs ''${concatStringsSep ", " fullPath}
     job="$1"
     shift
     mkfifo "$job"/control
@@ -389,7 +382,7 @@ rec {
     ( echo '{ "execute": "qmp_capabilities" }'
     ) | ${netcat}/bin/nc -lU "$job"/qmp >/dev/null &
 
-    ( echo "$@" 
+    ( echo "$@"
       echo ". /input"
     ) > "$job"/control &
 
@@ -403,7 +396,7 @@ rec {
   '' // args;
 
   # if this doesn't build, and just silently sits there, try increasing memory
-  suspension = { name, initrdPath, fullPath, storeDrives, mem, desc }: bitflip.flipTwice (stdenv.mkDerivation {
+  suspension = { name, initrdPath, fullPath, storeDrives, mem, desc }: /*bitflip.flipTwice*/ (stdenv.mkDerivation {
     name = "${name}-suspension";
     requiredSystemFeatures = [ "kvm" ];
     nativeBuildInputs = [ qemu netcat lz4 ];
