@@ -36,7 +36,8 @@ let
         storeDrives.rust = [
           (rustChannelOf {
             channel = "nightly";
-            date = "2018-08-06";
+            date = "2022-10-18";
+            sha256 = "fx05J7wYhY4kGPMKhZG+3eIXUGnSm0vdx8jClYJ8vos=";
           }).rust
           gcc
         ];
