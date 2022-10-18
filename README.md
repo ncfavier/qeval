@@ -24,6 +24,7 @@ There are currently evaluators for
 * Guile
 * Haskell
 * Qalculate (which doesn't really need the sandboxing)
+* Nix (no stdenv yet)
 
 Perl is currently the fastest evaluator, taking 0.16s on my laptop for a simple `print 42`.
 

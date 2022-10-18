@@ -210,9 +210,10 @@ rec {
       fi
     done
 
-    stores="$( ( find /mnt/store -mindepth 1 -maxdepth 1; echo /nix/store ) | paste -sd :)"
+    stores="$(find /mnt/store -mindepth 1 -maxdepth 1 | paste -sd :)"
     echo stores: $stores
-    mount -t overlay overlay -o "ro,lowerdir=$stores" /nix/store
+    mkdir /work
+    mount -t overlay overlay -o "lowerdir=$stores,upperdir=/nix/store,workdir=/work" /nix/store
 
     if [ -n "$jobDesc" ]; then
       . "$jobDesc"
