@@ -244,10 +244,11 @@ let
       aliases = [ "shell" "sh" ];
       mem = 60;
       storeDrives.bash = [
-        bash coreutils gnused gnugrep gawk file bsdgames tree
+        bash coreutils gnused gnugrep gawk file bsdgames tree jq
       ];
 
       command = ''
+        export TZDIR=${pkgs.tzdata}/share/zoneinfo
         bash "$1"
       '';
 
