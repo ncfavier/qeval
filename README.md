@@ -38,6 +38,16 @@ $ bin/sh id
 uid=0(root) gid=0 groups=0
 ```
 
+### With [flakes](https://nixos.wiki/wiki/Flakes)
+
+```sh
+# Run an evaluator directly
+$ nix run github:ncfavier/qeval#sh id
+uid=0(root) gid=0 groups=0
+# Build all evaluators
+$ nix build github:ncfavier/qeval
+```
+
 ### Todo
 
 * Disk hotplug to reduce amount of disk suspensions (and be able to mlock the remaining one)
