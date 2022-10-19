@@ -222,7 +222,11 @@ rec {
     . "$preCmd"
 
     echo ready > /dev/vport2p1
-    read -r input < /dev/vport2p1
+
+    # SUSPENSION
+
+    { read -r date; read -r input; } < /dev/vport2p1
+    date -s "@$date" > /dev/null
     echo "$input" > /input
 
     . "$cmd" /input
@@ -394,7 +398,10 @@ rec {
 
     ${netcat}/bin/nc -lU "$job"/qmp </dev/null >/dev/null &
 
-    printf '%s\n' "$*" > "$job"/control.in &
+    {
+      date -u +%s
+      printf '%s\n' "$*"
+    } > "$job"/control.in &
 
     timeout --foreground 10 ${qemu}/bin/qemu-system-x86_64 \
       ${commonQemuOptions} \
