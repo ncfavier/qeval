@@ -160,7 +160,7 @@ let
       '';
 
       command = ''
-        mv "$1" /Main.java
+        mv "$1" Main.java
         javac Main.java && java Main
       '';
 
