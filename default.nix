@@ -251,12 +251,12 @@ rec {
     '';
   in drv: flip (flip drv);
 
-  mkSquashFs = settings: contents: removeReferences (stdenv.mkDerivation {
-    name = "squashfs.img";
+  mkSquashFs = settings: name: contents: removeReferences (stdenv.mkDerivation {
+    name = "squashfs-${name}.img";
     nativeBuildInputs = [ squashfsTools ];
+    closureInfo = closureInfo { rootPaths = contents; };
     buildCommand = ''
-      closureInfo=${closureInfo { rootPaths = contents; }}
-      mksquashfs $(cat $closureInfo/store-paths) $out \
+      mksquashfs $(< "$closureInfo"/store-paths) "$out" \
         -keep-as-directory -all-root -b 1048576 ${settings}
     '';
   });
@@ -282,8 +282,8 @@ rec {
       '';
       run' = run {
         inherit name initrdPath fullPath mem desc;
-        storeDrives = (mapAttrs (k: mkSquashFsLz4) storeDrives) // {
-          desc = mkSquashFsLz4 [ desc initrdUtils ];
+        storeDrives = (mapAttrs mkSquashFsLz4 storeDrives) // {
+          desc = mkSquashFsLz4 "desc-${name}" [ desc initrdUtils ];
         };
       };
 
