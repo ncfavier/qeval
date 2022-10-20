@@ -20,7 +20,7 @@
       ];
     };
   in rec {
-    legacyPackages = import self { inherit pkgs; };
+    legacyPackages = pkgs.callPackage self {};
     packages = legacyPackages.evaluators // {
       default = legacyPackages.evaluators.all;
     };

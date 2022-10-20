@@ -1,4 +1,7 @@
-{ pkgs ? import ./nixpkgs.nix }:
+{ pkgs ? import ./nixpkgs.nix
+, enableKVM ? true
+, timeout ? if enableKVM then 10 else 20
+}:
 
 with pkgs;
 with lib;
@@ -366,7 +369,7 @@ rec {
     -only-migratable \
     -nographic -no-reboot \
     -sandbox on,spawn=allow \
-    -cpu qemu64 -enable-kvm \
+    -cpu qemu64 ${lib.optionalString enableKVM "-enable-kvm"} \
     -m "$mem" \
     -net none \
     -device virtio-rng-pci,max-bytes=1024,period=1000 \
@@ -403,7 +406,7 @@ rec {
       printf '%s\n' "$*"
     } > "$job"/control.in &
 
-    timeout --foreground 10 ${qemu}/bin/qemu-system-x86_64 \
+    timeout --foreground ${toString timeout} ${qemu}/bin/qemu-system-x86_64 \
       ${commonQemuOptions} \
       ${qemuDriveOptions (builtins.attrValues storeDrives)} \
         -incoming 'exec:${suspensionReadCommand} ${suspension args}' | ${dos2unix}/bin/dos2unix -f | head -c 1M
@@ -413,7 +416,7 @@ rec {
   # if this doesn't build, and just silently sits there, try increasing memory
   suspension = { name, initrdPath, fullPath, storeDrives, mem, desc }: removeReferences (stdenv.mkDerivation {
     name = "${name}-suspension";
-    requiredSystemFeatures = [ "kvm" ];
+    requiredSystemFeatures = lib.optional enableKVM "kvm";
     nativeBuildInputs = [ qemu netcat lz4 ];
 
     inherit fullPath mem desc;
