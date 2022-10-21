@@ -2,6 +2,7 @@
 , baseKernelPackages ? pkgs.linuxPackages # tested up to 5.19
 , enableKVM ? true
 , timeout ? if enableKVM then 10 else 20
+, suspensionTimeout ? if enableKVM then 60 else 120
 }:
 
 with pkgs;
@@ -432,7 +433,7 @@ rec {
         echo '{ "execute": "quit" }'
       ) | ${netcat}/bin/nc -lU job/qmp &
 
-      timeout 60 qemu-system-x86_64 \
+      timeout ${toString suspensionTimeout} qemu-system-x86_64 \
         ${commonQemuOptions} \
         ${qemuDriveOptions (builtins.attrValues storeDrives)} \
           -kernel ${kernel}/bzImage \
