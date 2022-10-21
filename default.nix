@@ -1,4 +1,5 @@
 { pkgs ? import ./nixpkgs.nix
+, baseKernelPackages ? pkgs.linuxPackages # tested up to 5.19
 , enableKVM ? true
 , timeout ? if enableKVM then 10 else 20
 }:
@@ -25,8 +26,6 @@ rec {
     hostCpuOnly = true;
     seccompSupport = true;
   };
-
-  baseKernelPackages = linuxPackages; # tested up to 5.19
 
   kconfig = kernelConfig.override {
     linux = baseKernelPackages.kernel;
