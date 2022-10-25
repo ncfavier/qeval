@@ -1,4 +1,4 @@
-{ pkgs, prepareJob }:
+{ pkgs, prepareJob, filterEvaluators ? all: all }:
 with pkgs;
 
 let
@@ -448,34 +448,36 @@ let
       testOutput = "\"success\"";
     };
 
-    listAll = with self; [
-      ash
-      sh
-      python python2
-      ruby
-      perl
-      lua
-      nodejs
-      haskell
-      rust
-      c tcc
-      cpp
-      java
-      kotlin
-      racket
-      guile
-      brainfuck
-      php
-      go
-      qalculate
-      nix
-    ];
+    availableEvaluators = filterEvaluators (with self; {
+      inherit
+        ash
+        sh
+        python python2
+        ruby
+        perl
+        lua
+        nodejs
+        haskell
+        rust
+        c tcc
+        cpp
+        java
+        kotlin
+        racket
+        guile
+        brainfuck
+        php
+        go
+        qalculate
+        nix
+        ;
+    });
 
     all = symlinkJoin {
       name = "all-evaluators";
-      paths = self.listAll;
+      paths = builtins.attrValues self.availableEvaluators;
     };
 
-    apparmorAll = map (p: p.apparmor) self.listAll;
+    apparmorAll = map (p: p.apparmor) (builtins.attrValues self.availableEvaluators);
   };
 in self
