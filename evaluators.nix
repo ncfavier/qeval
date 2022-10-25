@@ -164,9 +164,12 @@ let
         javac Main.java && java Main
       '';
 
-      # TODO: multi-line tests/input
       testInput = ''
-        public class Main { public static void main(String... args) { System.out.println("success"); } }
+        public class Main {
+          public static void main(String... args) {
+            System.out.println("success");
+          }
+        }
       '';
     };
 

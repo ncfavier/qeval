@@ -51,7 +51,7 @@ $ nix build github:ncfavier/qeval
 ### Todo
 
 * Disk hotplug to reduce amount of disk suspensions (and be able to mlock the remaining one)
+* Make store drives more self-contained (PATH, hooks) so we don't have to use unsafeDiscardContext shenanigans
 * More sophisticated control processes
   * Quicker abort when output has reached size limit
   * Report exit status, memory usage (and OOM), other statistics (count syscalls?)
-  * Multi-line input

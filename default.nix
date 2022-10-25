@@ -1,5 +1,6 @@
 { pkgs ? import ./nixpkgs.nix
 , baseKernelPackages ? pkgs.linuxPackages # tested up to 5.19
+, suspensionUseCompression ? true # set to false if you want speed over size
 , enableKVM ? true
 , timeout ? if enableKVM then 10 else 20
 , suspensionTimeout ? if enableKVM then 60 else 120
@@ -175,14 +176,7 @@ rec {
 
     for o in $(cat /proc/cmdline); do
       case $o in
-        jobDesc=*)
-          set -- $(IFS==; echo $o)
-          jobDesc=$2
-          ;;
-        mountVirtfs=*)
-          set -- $(IFS==; echo $o)
-          mountVirtfs=$2
-          ;;
+        jobDesc=*) jobDesc=''${o#*=} ;;
       esac
     done
 
@@ -214,9 +208,9 @@ rec {
     done
 
     stores="$(find /mnt/store -mindepth 1 -maxdepth 1 | paste -sd :)"
-    echo stores: $stores
-    mkdir /work
-    mount -t overlay overlay -o "lowerdir=$stores,upperdir=/nix/store,workdir=/work" /nix/store
+    echo "stores: $stores:/nix/store"
+    mkdir -p /nix/store /nix/.store-work
+    mount -t overlay overlay -o "lowerdir=$stores,upperdir=/nix/store,workdir=/nix/.store-work" /nix/store
 
     if [ -n "$jobDesc" ]; then
       . "$jobDesc"
@@ -224,11 +218,8 @@ rec {
 
     . "$preCmd"
 
-    echo ready > /dev/vport2p1
-
-    # SUSPENSION
-
-    { read -r date; read -r input; } < /dev/vport2p1
+    # opening the virtio serial port triggers the migration
+    { read -r date; read -rd "" input; } < /dev/vport1p1
     date -s "@$date" > /dev/null
     echo "$input" > /input
 
@@ -281,7 +272,7 @@ rec {
         preCmd=${mkScript preCommand}
       '';
       run' = run {
-        inherit name initrdPath fullPath mem desc;
+        inherit name initrdPath mem desc;
         storeDrives = (mapAttrs mkSquashFsLz4 storeDrives) // {
           desc = mkSquashFsLz4 "desc-${name}" [ desc initrdUtils ];
         };
@@ -374,17 +365,14 @@ rec {
     -net none \
     -device virtio-rng-pci,max-bytes=1024,period=1000 \
     -device virtio-serial-pci \
-    -device virtio-serial \
     -chardev pipe,path="$job"/control,id=control \
-    -device virtserialport,chardev=control,id=control \
-    -qmp-pretty unix:"$job"/qmp '';
+    -device virtserialport,chardev=control,id=control '';
 
   qemuDriveOptions = lib.concatMapStringsSep " " (d: "-drive if=virtio,readonly=on,format=raw,file=${d}");
 
-  suspensionUseCompression = true;
   suspensionWriteCommand =
     if suspensionUseCompression
-    then "${lz4}/bin/lz4 -9 --favor-decSpeed -"
+    then "${lz4}/bin/lz4 -3 --favor-decSpeed -"
     else "cat >";
 
   suspensionReadCommand =
@@ -392,53 +380,54 @@ rec {
     then "${lz4}/bin/lz4 -dc --favor-decSpeed"
     else "cat ";
 
-  run = args@{ name, fullPath, initrdPath, storeDrives, mem, desc, ... }: writeShellScriptBin "run-qemu" ''
+  run = args@{ name, initrdPath, storeDrives, mem, desc, ... }: writeShellScriptBin "run-qemu" ''
     # ${name}
     job="$1"
     shift
     mkfifo "$job"/control.{in,out}
     mem="${toString mem}"
 
-    ${netcat}/bin/nc -lU "$job"/qmp </dev/null >/dev/null &
-
     {
       date -u +%s
-      printf '%s\n' "$*"
+      printf '%s\0' "$*"
     } > "$job"/control.in &
 
     timeout --foreground ${toString timeout} ${qemu}/bin/qemu-system-x86_64 \
       ${commonQemuOptions} \
+      -monitor none \
       ${qemuDriveOptions (builtins.attrValues storeDrives)} \
-        -incoming 'exec:${suspensionReadCommand} ${suspension args}' | ${dos2unix}/bin/dos2unix -f | head -c 1M
+      -incoming "exec:${suspensionReadCommand} ${suspension args}" | ${dos2unix}/bin/dos2unix -f | head -c 1M
   '' // args;
   # ^ qemu incorrectly does crlf conversion, check in the future if still necessary
 
   # if this doesn't build, and just silently sits there, try increasing memory
-  suspension = { name, initrdPath, fullPath, storeDrives, mem, desc }: removeReferences (stdenv.mkDerivation {
+  suspension = { name, initrdPath, storeDrives, mem, desc }: removeReferences (stdenv.mkDerivation {
     name = "${name}-suspension";
     requiredSystemFeatures = lib.optional enableKVM "kvm";
-    nativeBuildInputs = [ qemu netcat lz4 ];
+    nativeBuildInputs = [ qemu ];
 
-    inherit fullPath mem desc;
+    inherit mem desc;
+
+    migrationCommand = ''${suspensionWriteCommand} "$out"; echo '{"execute":"quit"}' > job/qmp.in'';
 
     buildCommand = ''
       mkdir job
       job=$PWD/job
-      mkfifo job/control.{in,out}
+      mkfifo job/control.{in,out} job/qmp.{in,out}
 
-      ( read ready < job/control.out
-        echo '{ "execute": "qmp_capabilities" }'
-        echo '{ "execute": "migrate", "arguments": { "uri": "exec:${suspensionWriteCommand} '$out'" } }'
-        sleep 15 # FIXME
-        echo '{ "execute": "quit" }'
-      ) | ${netcat}/bin/nc -lU job/qmp &
+      ${jq}/bin/jq -cn --unbuffered '
+        {execute: "qmp_capabilities"},
+        (limit(1; inputs | select(.event == "VSERPORT_CHANGE" and .data.id == "control" and .data.open)) |
+        {execute: "migrate", arguments: {uri: "exec:\($ENV.migrationCommand)"}})
+      ' < job/qmp.out > job/qmp.in &
 
       timeout ${toString suspensionTimeout} qemu-system-x86_64 \
         ${commonQemuOptions} \
+        -qmp pipe:"$job"/qmp \
         ${qemuDriveOptions (builtins.attrValues storeDrives)} \
-          -kernel ${kernel}/bzImage \
-          -initrd ${initrd initrdPath}/initrd \
-          -append "console=ttyS0,38400 tsc=unstable panic=-1 jobDesc=${desc}"
+        -kernel ${kernel}/bzImage \
+        -initrd ${initrd initrdPath}/initrd \
+        -append "console=ttyS0,38400 tsc=unstable panic=-1 jobDesc=${desc}"
     '';
   });
 
