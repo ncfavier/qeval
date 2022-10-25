@@ -412,35 +412,39 @@ let
       testOutput = "\"success\"";
     };
 
-    nix = prepareJob {
+    nix = let
+      closure = closureInfo { rootPaths = [
+        (writeText "dummy" "dummy").drvPath
+      ]; };
+    in prepareJob {
       name = "nix";
       mem = 200;
       storeDrives.nix = [ nix ];
-      storeDrives.nixpkgs = [ {
-        name = "nixpkgs";
-        outPath = pkgs.path;
-      } ]; # TODO stdenv
 
       preCommand = ''
         mkdir -p /etc/nix
-        echo 'build-users-group =' >> /etc/nix/nix.conf
-        echo 'substituters =' >> /etc/nix/nix.conf
-        echo 'sandbox = false' >> /etc/nix/nix.conf
+        cat > /etc/nix/nix.conf << EOF
+        experimental-features = nix-command flakes ca-derivations
+        build-users-group =
+        substituters =
+        sandbox = false
+        EOF
 
         export NIX_PATH=nixpkgs=${pkgs.path}
+
+        nix-store --load-db < ${closure}/registration
 
         nix-instantiate --eval -E "42"
       '';
 
       command = ''
-        nix-instantiate --eval --read-write-mode --option allow-unsafe-native-code-during-evaluation true \
+        nix-instantiate --quiet --eval --read-write-mode \
           -E "let pkgs = import <nixpkgs> {}; inherit (pkgs) lib; in $(cat "$1")"
       '';
 
-      testInput = "\"success\"";
-      # testInput = ''
-      #   builtins.readFile (pkgs.writeText "foo" "success")
-      # '';
+      testInput = ''
+        builtins.readFile (pkgs.writeText "foo" "success")
+      '';
       testOutput = "\"success\"";
     };
 
