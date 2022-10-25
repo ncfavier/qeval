@@ -175,7 +175,7 @@ let
 
     kotlin = prepareJob rec {
       name = "kotlin";
-      mem = 300;
+      mem = 500;
       storeDrives.kotlin = [ kotlin ];
 
       preCommand = ''
@@ -457,7 +457,7 @@ let
       c tcc
       cpp
       java
-      # kotlin
+      kotlin
       racket
       guile
       brainfuck
