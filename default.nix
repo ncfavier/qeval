@@ -1,16 +1,7 @@
 { pkgs ? import ./nixpkgs.nix
 , baseKernelPackages ? pkgs.linuxPackages # tested up to 5.19
-, suspensionUseCompression ? true # set to false if you want speed over size
-, enableKVM ? true
-, timeout ? if enableKVM then 10 else 20
-, suspensionTimeout ? if enableKVM then 60 else 120
-}:
-
-with pkgs;
-with lib;
-
-rec {
-  qemu = pkgs.qemu.override {
+, extraKernelConfig ? {}
+, qemu ? pkgs.qemu.override {
     guestAgentSupport = false;
     numaSupport = false;
     alsaSupport = false;
@@ -27,8 +18,17 @@ rec {
 
     hostCpuOnly = true;
     seccompSupport = true;
-  };
+  }
+, suspensionUseCompression ? true # set to false if you want speed over size
+, enableKVM ? true
+, timeout ? if enableKVM then 10 else 20
+, suspensionTimeout ? if enableKVM then 60 else 120
+}:
 
+with pkgs;
+with lib;
+
+rec {
   kconfig = kernelConfig.override {
     linux = baseKernelPackages.kernel;
   } {
@@ -125,7 +125,7 @@ rec {
       KVM_GUEST = true;
       PARAVIRT = true;
       PARAVIRT_SPINLOCKS = true;
-    };
+    } // extraKernelConfig;
   };
 
   kernelPackages = linuxPackages_custom {
