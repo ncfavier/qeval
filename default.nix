@@ -256,7 +256,7 @@ rec {
   mkSquashFsLz4 = mkSquashFs "-comp lz4 -Xhc";
   mkSquashFsGz = mkSquashFs "-comp gzip -Xcompression-level 9";
 
-  prepareJob = args@{
+  prepareJob = lib.makeOverridable (args@{
       name, aliases ? [], initrdPath ? [ initrdUtils ], storeDrives ? {}, mem ? 50, command, preCommand ? "",
       doCheck ? true, testInput ? "", testOutput ? "success" }:
     let
@@ -348,7 +348,7 @@ rec {
           ) > $out
         '';
       };
-    };
+    });
 
   # -drive if=virtio,readonly,format=qcow2,file="$disk" \
 
