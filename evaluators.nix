@@ -203,7 +203,7 @@ let
       '';
 
       command = ''
-        ${python3}/bin/python3 "$1"
+        ${python3}/bin/python3 -c 'import sys;exec(compile(open(sys.argv[1]).read(), "input", "single"))' "$1"
       '';
 
       testInput = "print(\"success\")";
@@ -219,7 +219,7 @@ let
       '';
 
       command = ''
-        ${python2}/bin/python2 "$1"
+        ${python2}/bin/python2 -c 'import sys;exec(compile(open(sys.argv[1]).read(), "input", "single"))' "$1"
       '';
 
       testInput = "print \"success\"";
