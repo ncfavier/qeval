@@ -305,7 +305,7 @@ rec {
 
         inherit doCheck;
         checkPhase = ''
-          EXPECTED="$(printf ${escapeShellArg testOutput})"
+          EXPECTED=${escapeShellArg testOutput}
           ${xxd}/bin/xxd <<<"$EXPECTED"
           RESULT="$($src/bin/run ${escapeShellArg testInput})"
           ${xxd}/bin/xxd <<<"$RESULT"

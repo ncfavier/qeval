@@ -23,6 +23,7 @@ There are currently evaluators for
 * Racket
 * Guile
 * Haskell
+* OCaml
 * Qalculate (which doesn't really need the sandboxing)
 * Nix
 

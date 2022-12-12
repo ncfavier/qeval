@@ -393,6 +393,23 @@ let
       testInput = "putStrLn \"success\"";
     };
 
+    ocaml = prepareJob {
+      name = "ocaml";
+      mem = 100;
+      storeDrives.ocaml = [ ocaml ];
+
+      preCommand = ''
+        ocaml -e 42
+      '';
+
+      command = ''
+        { cat "$1"; echo ';;'; } | ocaml -no-version -noprompt -color never | head -n -1
+      '';
+
+      testInput = ''"success"'';
+      testOutput = ''- : string = "success"'';
+    };
+
     qalculate = prepareJob {
       name = "qalculate";
       mem = 100;
@@ -458,6 +475,7 @@ let
         lua
         nodejs
         haskell
+        ocaml
         rust
         c tcc
         cpp
