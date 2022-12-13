@@ -441,10 +441,11 @@ let
       preCommand = ''
         mkdir -p /etc/nix
         cat > /etc/nix/nix.conf << EOF
-        experimental-features = nix-command flakes ca-derivations
-        build-users-group =
-        substituters =
+        experimental-features = nix-command flakes ca-derivations recursive-nix
         sandbox = false
+        build-users-group =
+        start-id = 0
+        substituters =
         EOF
 
         export NIX_PATH=nixpkgs=${pkgs.path}
@@ -462,7 +463,7 @@ let
       testInput = ''
         builtins.readFile (pkgs.writeText "foo" "success")
       '';
-      testOutput = "\"success\"";
+      testOutput = ''"success"'';
     };
 
     availableEvaluators = filterEvaluators (with self; {

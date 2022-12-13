@@ -195,6 +195,7 @@ rec {
     ln -sf /proc/mounts /etc/mtab
     echo "127.0.0.1 localhost" > /etc/hosts
     echo "root:x:0:0:root:/:/bin/sh" > /etc/passwd
+    echo "root:x:0:" > /etc/group
 
     mkdir -p /bin
     ln -s ${initrdUtils}/bin/ash /bin/sh
@@ -305,11 +306,16 @@ rec {
 
         inherit doCheck;
         checkPhase = ''
-          EXPECTED=${escapeShellArg testOutput}
-          ${xxd}/bin/xxd <<<"$EXPECTED"
-          RESULT="$($src/bin/run ${escapeShellArg testInput})"
-          ${xxd}/bin/xxd <<<"$RESULT"
-          [ "$RESULT" = "$EXPECTED" ]
+          expected=${escapeShellArg testOutput}
+          result=$($src/bin/run ${escapeShellArg testInput})
+          printf '%s\n' "$result"
+          if [[ "$result" != "$expected" ]]; then
+            echo expected:
+            ${xxd}/bin/xxd <<< "$expected"
+            echo got:
+            ${xxd}/bin/xxd <<< "$result"
+            exit 1
+          fi
         '';
       };
     in self // {
