@@ -23,6 +23,7 @@
 , enableKVM ? true
 , timeout ? if enableKVM then 10 else 20
 , suspensionTimeout ? if enableKVM then 60 else 120
+, dumbTerminal ? false
 }:
 
 with pkgs;
@@ -161,6 +162,12 @@ rec {
       done
     '';
 
+  terminfo = runCommand "terminfo" { nativeBuildInputs = [ ncurses ]; } ''
+    tic -s -o "$out" ${builtins.toFile "dumb.terminfo" ''
+      dumb|dumb terminal, am, cols#80, bel=^G, cr=^M, cud1=^J, ind=^J
+    ''}
+  '';
+
   stage1 = writeScript "vm-run-stage1" ''
     #! ${initrdUtils}/bin/ash -e
     export PATH=${initrdUtils}/bin
@@ -196,6 +203,10 @@ rec {
     echo "127.0.0.1 localhost" > /etc/hosts
     echo "root:x:0:0:root:/:/bin/sh" > /etc/passwd
     echo "root:x:0:" > /etc/group
+    ${optionalString dumbTerminal ''
+    ln -s ${terminfo} /etc/terminfo
+    export TERM=dumb
+    ''}
 
     mkdir -p /bin
     ln -s ${initrdUtils}/bin/ash /bin/sh
