@@ -399,7 +399,7 @@ with pkgs;
   ocaml = {
     name = "ocaml";
     mem = 100;
-    storeDrives.ocaml = [ ocaml ];
+    storeDrives.ocaml = [ ocaml-ng.ocamlPackages_latest.ocaml ];
 
     preCommand = ''
       ocaml -e 42
