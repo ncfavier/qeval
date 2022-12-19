@@ -229,14 +229,14 @@ rec {
       . "$jobDesc"
     fi
 
-    . "$preCmd"
+    . "$preCommand"
 
     # opening the virtio serial port triggers the migration
     { read -r date; read -rd "" input; } < /dev/vport1p1
     date -s "@$date" > /dev/null
     echo "$input" > /input
 
-    . "$cmd" /input
+    . "$command" /input
 
     exec poweroff -f
   '';
@@ -274,15 +274,11 @@ rec {
       doCheck ? true, testInput ? "", testOutput ? "success" }:
     let
       fullPath = (concatLists (builtins.attrValues storeDrives)) ++ initrdPath;
-      mkScript = cmd: writeScript "run" ''
-        #!/bin/sh -e
-        PATH=${lib.makeBinPath (map builtins.unsafeDiscardStringContext fullPath)}
-        ${cmd}
-      '';
 
       desc = writeText "desc" ''
-        cmd=${mkScript command}
-        preCmd=${mkScript preCommand}
+        export PATH=${lib.makeBinPath (map builtins.unsafeDiscardStringContext fullPath)}
+        command=${writeScript "command" command}
+        preCommand=${writeScript "preCommand" preCommand}
       '';
       run' = run {
         inherit name initrdPath mem desc;
@@ -301,7 +297,7 @@ rec {
 
         src = writeShellScriptBin "run" ''
           set -e
-          PATH=${coreutils}/bin
+          PATH=${makeBinPath [ coreutils ]}
           job=$(mktemp -d)
           ${run'}/bin/run-qemu "$job" "$@"
           rm -rf "$job"
@@ -400,6 +396,7 @@ rec {
 
   run = args@{ name, initrdPath, storeDrives, mem, desc, ... }: writeShellScriptBin "run-qemu" ''
     # ${name}
+    export PATH=${makeBinPath [ coreutils ]}
     job="$1"
     shift
     mkfifo "$job"/control.{in,out}
