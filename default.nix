@@ -24,6 +24,7 @@
 , timeout ? if enableKVM then 10 else 20
 , suspensionTimeout ? if enableKVM then 60 else 120
 , dumbTerminal ? false
+, editEvaluators ? x: x
 }:
 
 with pkgs;
@@ -450,5 +451,13 @@ rec {
     '';
   });
 
-  evaluators = callPackage ./evaluators.nix { inherit prepareJob; };
+  evaluators = builtins.mapAttrs (_: prepareJob) (editEvaluators
+    (import ./evaluators.nix { inherit pkgs; }));
+
+  all = symlinkJoin {
+    name = "all-evaluators";
+    paths = builtins.attrValues evaluators;
+  };
+
+  apparmorAll = map (p: p.apparmor) (builtins.attrValues evaluators);
 }

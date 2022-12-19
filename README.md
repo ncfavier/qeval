@@ -5,27 +5,29 @@ It's inspired by [shbot](https://github.com/geirha/shbot), but none of the code 
 
 There are currently evaluators for
 
-* Perl 5
-* Rust nightly
-* Go
+* Ash (from busybox)
+* Bash
+* Brainfuck
 * C (gcc)
 * C (tcc)
 * C++ (gcc)
-* Java (openjdk)
-* Python 3
-* Python 2
-* Ruby
-* Bash
-* Ash (from busybox)
-* NodeJS
-* Lua
-* PHP
-* Racket
+* Go
 * Guile
 * Haskell
-* OCaml
-* Qalculate (which doesn't really need the sandboxing)
+* Java (openjdk)
+* Kotlin
+* Lua
 * Nix
+* NodeJS
+* OCaml
+* Perl 5
+* PHP
+* Python 2
+* Python 3
+* Qalculate (which doesn't really need the sandboxing)
+* Racket
+* Ruby
+* Rust nightly
 
 Perl is currently the fastest evaluator, taking 0.16s on my laptop for a simple `print 42`.
 
@@ -33,9 +35,9 @@ Perl is currently the fastest evaluator, taking 0.16s on my laptop for a simple 
 ### Example usage
 
 ```sh
-# This may build Linux, QEMU, and Perl. Use evaluators.sh if you're impatient
-$ cd $(nix-build --no-out-link . -A evaluators.all)
-$ bin/sh id
+# This may build Linux, QEMU, and will build all evaluators. Use `evaluators.sh` if you're impatient.
+$ nix-build --no-out-link . -A all
+$ result/bin/sh id
 uid=0(root) gid=0 groups=0
 ```
 

@@ -21,8 +21,9 @@
     };
   in rec {
     legacyPackages = pkgs.callPackage self {};
-    packages = legacyPackages.evaluators // {
-      default = legacyPackages.evaluators.all;
+    packages = legacyPackages.evaluators // rec {
+      inherit (legacyPackages) all;
+      default = all;
     };
   });
 }
