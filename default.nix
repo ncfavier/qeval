@@ -1,5 +1,5 @@
 { pkgs ? import ./nixpkgs.nix
-, baseKernelPackages ? pkgs.linuxPackages # tested up to 5.19
+, baseKernelPackages ? pkgs.linuxPackages # tested up to 6.0
 , extraKernelConfig ? {}
 , qemu ? pkgs.qemu.override {
     guestAgentSupport = false;
@@ -19,7 +19,7 @@
     hostCpuOnly = true;
     seccompSupport = true;
   }
-, suspensionUseCompression ? true # set to false if you want speed over size
+, suspensionUseCompression ? true # set to false if you favour speed at the expense of size
 , enableKVM ? true
 , timeout ? if enableKVM then 10 else 20
 , suspensionTimeout ? if enableKVM then 60 else 120
@@ -402,18 +402,20 @@ rec {
     job="$1"
     shift
     mkfifo "$job"/control.{in,out}
-    mem="${toString mem}"
+    mem=''${QEVAL_MEM:-${toString mem}}
+    timeout=''${QEVAL_TIME:-${toString timeout}}
+    max_output=''${QEVAL_MAX_OUTPUT:-1M}
 
     {
       date -u +%s
       printf '%s\0' "$*"
     } > "$job"/control.in &
 
-    timeout --foreground ${toString timeout} ${qemu}/bin/qemu-system-x86_64 \
+    timeout --foreground "$timeout" ${qemu}/bin/qemu-system-x86_64 \
       ${commonQemuOptions} \
       -monitor none \
       ${qemuDriveOptions (builtins.attrValues storeDrives)} \
-      -incoming "exec:${suspensionReadCommand} ${suspension args}" | ${dos2unix}/bin/dos2unix -f | head -c 1M
+      -incoming "exec:${suspensionReadCommand} ${suspension args}" | ${dos2unix}/bin/dos2unix -f | head -c "$max_output"
   '' // args;
   # ^ qemu incorrectly does crlf conversion, check in the future if still necessary
 
