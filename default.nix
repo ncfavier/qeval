@@ -271,7 +271,7 @@ rec {
 
   prepareJob = lib.makeOverridable (args@{
       name, aliases ? [], initrdPath ? [ initrdUtils ], storeDrives ? {}, mem ? 50, command, preCommand ? "",
-      doCheck ? true, testInput ? "", testOutput ? "success" }:
+      doCheck ? true, testInput ? "", testOutput ? "success", ... }:
     let
       fullPath = (concatLists (builtins.attrValues storeDrives)) ++ initrdPath;
 

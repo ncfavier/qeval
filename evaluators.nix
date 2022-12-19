@@ -374,11 +374,11 @@ with pkgs;
     testInput = ''(display "success")'';
   };
 
-  haskell = {
+  haskell = lib.makeOverridable ({ packages, init }: {
     name = "haskell";
     aliases = [ "hask" "hs" "h" ];
     mem = 200;
-    storeDrives.ghc = [ ghc ];
+    storeDrives.ghc = [ (haskellPackages.ghcWithPackages packages) ];
 
     preCommand = ''
       echo '"foo":[]:[]' > /tmp/sample
@@ -386,10 +386,14 @@ with pkgs;
     '';
 
     command = ''
-      ghci -v0 -fdiagnostics-color=never < "$1"
+      { printf '%s\n' ${lib.escapeShellArg init}; cat "$1"; } |
+      ghci -v0 -fdiagnostics-color=never
     '';
 
     testInput = "putStrLn \"success\"";
+  }) {
+    packages = _: [];
+    init = "";
   };
 
   ocaml = {
