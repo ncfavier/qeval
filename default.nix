@@ -1,5 +1,5 @@
 { pkgs ? import ./nixpkgs.nix
-, baseKernelPackages ? pkgs.linuxPackages # tested up to 6.0
+, baseKernelPackages ? pkgs.linuxPackages # tested up to 6.1
 , extraKernelConfig ? {}
 , qemu ? pkgs.qemu.override {
     guestAgentSupport = false;
@@ -31,110 +31,108 @@ with pkgs;
 with lib;
 
 rec {
-  kconfig = kernelConfig.override {
-    linux = baseKernelPackages.kernel;
-  } {
-    config = {
-      X86 = true;
-      "64BIT" = true;
-      # PRINTK = true; # extra debugging
+  kconfig = {
+    X86 = true;
+    "64BIT" = true;
+    # PRINTK = true; # extra debugging
 
-      DEFAULT_HOSTNAME = "qeval";
+    DEFAULT_HOSTNAME = "qeval";
 
-      SWAP = false;
+    SWAP = false;
 
-      TTY = true;
-      SERIAL_8250 = true;
-      SERIAL_8250_CONSOLE = true;
-      VT = false;
+    TTY = true;
+    SERIAL_8250 = true;
+    SERIAL_8250_CONSOLE = true;
+    VT = false;
 
-      # execute elf and #! scripts
-      BINFMT_ELF = true;
-      BINFMT_SCRIPT = true;
+    # execute elf and #! scripts
+    BINFMT_ELF = true;
+    BINFMT_SCRIPT = true;
 
-      # enable ramdisk with gzip
-      BLK_DEV_INITRD = true;
-      RD_GZIP = true;
+    # enable ramdisk with gzip
+    BLK_DEV_INITRD = true;
+    RD_GZIP = true;
 
-      # allow for userspace to shut kernel down
-      PROC_FS = true;
-      MAGIC_SYSRQ = true;
+    # allow for userspace to shut kernel down
+    PROC_FS = true;
+    MAGIC_SYSRQ = true;
 
-      # needed for guest to tell qemu to shutdown
-      PCI = true;
-      ACPI = true;
+    # needed for guest to tell qemu to shutdown
+    PCI = true;
+    ACPI = true;
 
-      # allow unix domain sockets
-      NET = true;
-      UNIX = true;
-      WIRELESS = false;
+    # allow unix domain sockets
+    NET = true;
+    UNIX = true;
+    WIRELESS = false;
 
-      # enable block layer
-      BLOCK = true;
-      BLK_DEV = true;
-      BLK_DEV_LOOP = true;
+    # enable block layer
+    BLOCK = true;
+    BLK_DEV = true;
+    BLK_DEV_LOOP = true;
 
-      # required by Nix, which wants to acquire the big lock
-      FILE_LOCKING = true;
+    # required by Nix, which wants to acquire the big lock
+    FILE_LOCKING = true;
 
-      MISC_FILESYSTEMS = true;
-      SQUASHFS = true;
-      SQUASHFS_LZ4 = true;
-      LZ4_DECOMPRESS = true;
-      SQUASHFS_DECOMP_SINGLE = true;
-      # SQUASHFS_DECOMP_MULTI = true;
-      # SQUASHFS_FILE_DIRECT = true;
-      SQUASHFS_FILE_CACHE = true;
+    MISC_FILESYSTEMS = true;
+    SQUASHFS = true;
+    SQUASHFS_LZ4 = true;
+    LZ4_DECOMPRESS = true;
+    SQUASHFS_DECOMP_SINGLE = true;
+    # SQUASHFS_DECOMP_MULTI = true;
+    # SQUASHFS_FILE_DIRECT = true;
+    SQUASHFS_FILE_CACHE = true;
 
-      PROC_SYSCTL = true;
-      KERNFS = true;
-      SYSFS = true;
-      DEVTMPFS = true;
-      TMPFS = true;
+    PROC_SYSCTL = true;
+    KERNFS = true;
+    SYSFS = true;
+    DEVTMPFS = true;
+    TMPFS = true;
 
-      OVERLAY_FS = true;
+    OVERLAY_FS = true;
 
-      # support passing in various things
-      VIRTIO_MENU = true;
-      VIRTIO_PCI = true;
-      VIRTIO_PCI_LEGACY = false;
-      VIRTIO_BLK = true;
-      VIRTIO_CONSOLE = true;
+    # support passing in various things
+    VIRTIO_MENU = true;
+    VIRTIO_PCI = true;
+    VIRTIO_PCI_LEGACY = false;
+    VIRTIO_BLK = true;
+    VIRTIO_CONSOLE = true;
 
-      FUTEX = true;
+    FUTEX = true;
 
-      # enable timers (ghc needs them)
-      POSIX_TIMERS = true;
-      TIMERFD = true;
-      EVENTFD = true;
-      EPOLL = true;
+    # enable timers (ghc needs them)
+    POSIX_TIMERS = true;
+    TIMERFD = true;
+    EVENTFD = true;
+    EPOLL = true;
 
-      # tsc scaling, maybe
-      # "X86_TSC"
+    # tsc scaling, maybe
+    # "X86_TSC"
 
-      ADVISE_SYSCALLS = true;
+    ADVISE_SYSCALLS = true;
 
-      # "FSCACHE"
-      # "CACHEFILES"
+    # "FSCACHE"
+    # "CACHEFILES"
 
-      # required for guest to gather entropy, some applications
-      # will otherwise block forever (e.g. rustc)
-      HW_RANDOM = true;
-      HW_RANDOM_VIRTIO = true;
+    # required for guest to gather entropy, some applications
+    # will otherwise block forever (e.g. rustc)
+    HW_RANDOM = true;
+    HW_RANDOM_VIRTIO = true;
 
-      SMP = true;
-      HYPERVISOR_GUEST = true;
-      KVM_GUEST = true;
-      PARAVIRT = true;
-      PARAVIRT_SPINLOCKS = true;
-    } // extraKernelConfig;
-  };
+    SMP = true;
+    HYPERVISOR_GUEST = true;
+    KVM_GUEST = true;
+    PARAVIRT = true;
+    PARAVIRT_SPINLOCKS = true;
+  } // extraKernelConfig;
 
-  kernelPackages = linuxPackages_custom {
+  kernel = linuxKernel.manualConfig rec {
+    inherit lib stdenv;
     inherit (baseKernelPackages.kernel) version src;
-    configfile = kconfig;
+    modDirVersion = concatStringsSep "." (take 3 (splitVersion version ++ [ "0" "0" ]));
+    configfile = kernelConfig.override { linux = baseKernelPackages.kernel; } { config = kconfig; };
+    allowImportFromDerivation = true;
   };
-  inherit (kernelPackages) kernel;
 
   initrdUtils = runCommand "initrd-utils"
     { buildInputs = [ nukeReferences ];
