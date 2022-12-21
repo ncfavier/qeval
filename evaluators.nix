@@ -406,7 +406,7 @@ with pkgs;
     '';
 
     command = ''
-      { cat "$1"; echo ';;'; } | ocaml -no-version -noprompt -color never | head -n -1
+      { cat "$1"; echo ';;'; } | ocaml -no-version -noprompt -color never -I +unix unix.cma | head -n -1
     '';
 
     testInput = ''"success"'';
