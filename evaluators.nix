@@ -385,10 +385,14 @@ with pkgs;
       ln -s ${writeText "ghci.conf" init} ~/.ghc/ghci.conf
       echo '"foo":[]:[]' > /tmp/sample
       ghci -v0 < /tmp/sample
+      coproc ghc { ghci -v0 -fdiagnostics-color=never 2>&1; }
+      sleep 10
     '';
 
     command = ''
-      ghci -v0 -fdiagnostics-color=never < "$1"
+      cat "$1" >&"''${ghc[1]}"
+      exec {ghc[1]}>&-
+      cat <&"''${ghc[0]}"
     '';
 
     testInput = "putStrLn \"success\"";

@@ -168,7 +168,7 @@ rec {
   '';
 
   stage1 = writeScript "vm-run-stage1" ''
-    #! ${initrdUtils}/bin/ash -e
+    #! ${bash}/bin/bash -e
     export PATH=${initrdUtils}/bin
     echo
 
