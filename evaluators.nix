@@ -378,7 +378,7 @@ with pkgs;
     name = "haskell";
     aliases = [ "hask" "hs" "h" ];
     mem = 200;
-    storeDrives.ghc = [ (haskellPackages.ghcWithPackages packages) ];
+    storeDrives.ghc = [ (haskell.packages.ghc924BinaryMinimal.ghcWithPackages packages) ];
 
     preCommand = ''
       mkdir -p ~/.ghc
