@@ -28,6 +28,7 @@ There are currently evaluators for
 * Racket
 * Ruby
 * Rust nightly
+* Unlambda
 
 Perl is currently the fastest evaluator, taking 0.16s on my laptop for a simple `print 42`.
 

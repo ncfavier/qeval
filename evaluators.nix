@@ -466,4 +466,22 @@ with pkgs;
     '';
     testOutput = ''"success"'';
   };
+
+  unlambda = {
+    name = "unlambda";
+    mem = 100;
+    storeDrives.unlambda = [ haskellPackages.unlambda ];
+
+    preCommand = ''
+      printf '`r```````````.H.e.l.l.o. .w.o.r.l.di' | unlambda
+    '';
+
+    command = ''
+      unlambda < "$1"
+    '';
+
+    testInput = ''
+      `r```````.s.u.c.c.e.s.si
+    '';
+  };
 }
