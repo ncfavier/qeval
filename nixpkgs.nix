@@ -1,4 +1,5 @@
 import <nixpkgs> {
+  config = import ./nixpkgs-config.nix;
   overlays = [
     (self: super: {
       nur = super.callPackage (import (builtins.fetchTarball {

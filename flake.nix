@@ -10,6 +10,7 @@
   outputs = { self, flake-utils, nixpkgs, ... }@inputs: flake-utils.lib.eachDefaultSystem (system: let
     pkgs = import nixpkgs {
       inherit system;
+      config = import ./nixpkgs-config.nix;
       overlays = [
         inputs.nur.overlay
         inputs.nixpkgs-mozilla.overlays.rust
