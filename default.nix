@@ -131,7 +131,7 @@ rec {
     inherit (baseKernelPackages.kernel) version src;
     modDirVersion = concatStringsSep "." (take 3 (splitVersion version ++ [ "0" "0" ]));
     configfile = kernelConfig.override { linux = baseKernelPackages.kernel; } { config = kconfig; };
-    allowImportFromDerivation = true;
+    allowImportFromDerivation = false; # not needed
   };
 
   initrdUtils = runCommand "initrd-utils"
