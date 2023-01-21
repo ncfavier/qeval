@@ -97,7 +97,7 @@ with pkgs;
     '';
 
     command = ''
-      gcc -x c -o /input.out -std=c11 -Wall -Wextra -Wshadow -pedantic-errors -fsanitize=address,undefined -fdiagnostics-color=never "$1" && /input.out
+      gcc -x c -o /input.out -std=c11 -lm -Wall -Wextra -Wshadow -Wpedantic -pedantic-errors -fsanitize=address,undefined -fdiagnostics-color=never "$1" && /input.out
     '';
 
     testInput = ''
