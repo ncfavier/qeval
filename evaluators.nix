@@ -97,11 +97,20 @@ with pkgs;
     '';
 
     command = ''
-      gcc -x c -o /input.out -w -fdiagnostics-color=never "$1" && /input.out
+      mv "$1" /input.raw
+      cat - /input.raw > /input <<EOF
+        #include <complex.h>
+        #include <limits.h>
+        #include <math.h>
+        #include <stdio.h>
+        #include <stdlib.h>
+        #include <string.h>
+      EOF
+      gcc -x c -o /input.out -std=c11 -lm -Wall -Wextra -Wshadow -Wpedantic -pedantic-errors -fsanitize=address,undefined -fdiagnostics-color=never /input && /input.out
     '';
 
     testInput = ''
-      void main() { printf("success\n"); }
+      int main() { printf("success\n"); }
     '';
   };
 
@@ -118,7 +127,7 @@ with pkgs;
         int main() {
           $(cat /input.raw)
           return 0;
-        };
+        }
       EOF
       g++ -x 'c++' -o /input.out -w -fdiagnostics-color=never /input && /input.out
     '';
