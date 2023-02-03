@@ -35,8 +35,8 @@ with pkgs;
       storeDrives.rust = [
         (rustChannelOf {
           channel = "nightly";
-          date = "2022-10-18";
-          sha256 = "fx05J7wYhY4kGPMKhZG+3eIXUGnSm0vdx8jClYJ8vos=";
+          date = "2023-02-03";
+          sha256 = "sha256-wyY7CPWUP2plqWKcFT8NCeWpSQelGsTbIwq+CCsN4JE=";
         }).rust
         gcc
       ];

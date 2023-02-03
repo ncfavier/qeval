@@ -267,7 +267,7 @@ rec {
   mkSquashFsLz4 = mkSquashFs "-comp lz4 -Xhc";
   mkSquashFsGz = mkSquashFs "-comp gzip -Xcompression-level 9";
 
-  prepareJob = lib.makeOverridable (args@{
+  prepareJob = lib.makeOverridable ({
       name, aliases ? [], initrdPath ? [ initrdUtils ], storeDrives ? {}, mem ? 50, command, preCommand ? "",
       doCheck ? true, testInput ? "", testOutput ? "success", ... }:
     let
@@ -313,7 +313,7 @@ rec {
         inherit doCheck;
         checkPhase = ''
           expected=${escapeShellArg testOutput}
-          result=$($src/bin/run ${escapeShellArg testInput})
+          result=$(time $src/bin/run ${escapeShellArg testInput})
           printf '%s\n' "$result"
           if [[ "$result" != "$expected" ]]; then
             echo expected:
