@@ -290,16 +290,30 @@ rec {
         available = map (p: p.name) fullPath;
       });
 
-      self = stdenv.mkDerivation rec {
+      self = stdenv.mkDerivation {
         inherit name aliases;
 
-        src = writeShellScriptBin "run" ''
+        src = (writeShellScriptBin "run" ''
           set -e
           PATH=${makeBinPath [ coreutils ]}
           job=$(mktemp -d)
           ${run'}/bin/run-qemu "$job" "$@"
           rm -rf "$job"
-        '';
+        '').overrideAttrs (old: {
+          checkPhase = old.checkPhase or "" + ''
+            expected=${escapeShellArg testOutput}
+            chmod +x "$target"
+            result=$(time "$target" ${escapeShellArg testInput})
+            printf '%s\n' "$result"
+            if [[ "$result" != "$expected" ]]; then
+              echo expected:
+              ${xxd}/bin/xxd <<< "$expected"
+              echo got:
+              ${xxd}/bin/xxd <<< "$result"
+              exit 1
+            fi
+          '';
+        });
 
         installPhase = ''
           mkdir -p $out/bin $out/desc
@@ -308,20 +322,6 @@ rec {
           done
 
           ln -s ${description} "$out/desc/$name"
-        '';
-
-        inherit doCheck;
-        checkPhase = ''
-          expected=${escapeShellArg testOutput}
-          result=$(time $src/bin/run ${escapeShellArg testInput})
-          printf '%s\n' "$result"
-          if [[ "$result" != "$expected" ]]; then
-            echo expected:
-            ${xxd}/bin/xxd <<< "$expected"
-            echo got:
-            ${xxd}/bin/xxd <<< "$result"
-            exit 1
-          fi
         '';
       };
     in self // {
