@@ -449,9 +449,13 @@ rec {
   evaluators = builtins.mapAttrs (_: prepareJob) (editEvaluators
     (import ./evaluators.nix { inherit pkgs; }));
 
-  all = symlinkJoin {
+  all = symlinkJoin rec {
     name = "all-evaluators";
     paths = builtins.attrValues evaluators;
+    postBuild = ''
+      # keep a runtime dependency on the evaluators
+      echo ${concatStringsSep " " paths} > "$out/evaluators"
+    '';
   };
 
   apparmorAll = map (p: p.apparmor) (builtins.attrValues evaluators);
