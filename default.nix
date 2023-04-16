@@ -302,7 +302,6 @@ rec {
         '').overrideAttrs (old: {
           checkPhase = old.checkPhase or "" + ''
             expected=${escapeShellArg testOutput}
-            chmod +x "$target"
             result=$(time "$target" ${escapeShellArg testInput})
             printf '%s\n' "$result"
             if [[ "$result" != "$expected" ]]; then
