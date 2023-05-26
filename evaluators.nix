@@ -67,8 +67,19 @@ with pkgs;
 
   go = {
     name = "go";
-    mem = 125;
+    mem = 512;
     storeDrives.go = [ go ];
+
+    preCommand = ''
+      cat > /input.go <<EOF
+        package main
+        import "fmt"
+        func main() {
+          fmt.Println()
+        }
+      EOF
+      go run -v /input.go
+    '';
 
     command = ''
       mv "$1" /input.raw
@@ -321,7 +332,7 @@ with pkgs;
     name = "brainfuck";
     aliases = [ "bf" ];
     storeDrives.brainfuck = [
-      (runCommand "just-brainfuck" {} ''
+      (runCommandLocal "just-brainfuck" {} ''
         mkdir -p $out/bin
         cp ${haskellPackages.brainfuck}/bin/bf $out/bin/
       '')
