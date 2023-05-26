@@ -31,7 +31,7 @@ with pkgs;
     in {
       name = "rust";
       aliases = [ "rs" ];
-      mem = 200;
+      mem = 400;
       storeDrives.rust = [
         (rustChannelOf {
           channel = "nightly";
