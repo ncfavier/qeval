@@ -204,7 +204,7 @@ rec {
     echo "root:x:0:" > /etc/group
     ${optionalString dumbTerminal ''
     ln -s ${terminfo} /etc/terminfo
-    export TERM=dumb
+    export TERM=dumb NO_COLOR=1
     ''}
 
     mkdir -p /bin
