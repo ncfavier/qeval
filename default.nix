@@ -246,22 +246,17 @@ rec {
     ];
   };
 
-  # https://github.com/NixOS/nix/issues/5633
-  removeReferences = let
-    flip = drv: pkgs.runCommand "flipped-${drv.name}" { inherit drv; } ''
-      tr a-z0-9 n-za-m5-90-4 < "$drv" > "$out"
-    '';
-  in drv: flip (flip drv);
-
-  mkSquashFs = settings: name: contents: removeReferences (stdenv.mkDerivation {
+  mkSquashFs = settings: name: contents: stdenv.mkDerivation {
+    __structuredAttrs = true;
     name = "squashfs-${name}.img";
     nativeBuildInputs = [ squashfsTools ];
     closureInfo = closureInfo { rootPaths = contents; };
+    unsafeDiscardReferences.out = true;
     buildCommand = ''
       mksquashfs $(< "$closureInfo"/store-paths) "$out" \
         -keep-as-directory -all-root -b 1048576 ${settings}
     '';
-  });
+  };
 
   mkSquashFsXz = mkSquashFs "-comp xz -Xdict-size 100%";
   mkSquashFsLz4 = mkSquashFs "-comp lz4 -Xhc";
@@ -415,14 +410,16 @@ rec {
   # ^ qemu incorrectly does crlf conversion, check in the future if still necessary
 
   # if this doesn't build, and just silently sits there, try increasing memory
-  suspension = { name, initrdPath, storeDrives, mem, desc }: removeReferences (stdenv.mkDerivation {
+  suspension = { name, initrdPath, storeDrives, mem, desc }: stdenv.mkDerivation {
+    __structuredAttrs = true;
     name = "${name}-suspension";
     requiredSystemFeatures = lib.optional enableKVM "kvm";
     nativeBuildInputs = [ qemu ];
+    unsafeDiscardReferences.out = true;
 
     inherit mem desc;
 
-    migrationCommand = ''${suspensionWriteCommand} "$out"; echo '{"execute":"quit"}' > job/qmp.in'';
+    env.migrationCommand = ''${suspensionWriteCommand} "$out"; echo '{"execute":"quit"}' > job/qmp.in'';
 
     buildCommand = ''
       mkdir job
@@ -443,7 +440,7 @@ rec {
         -initrd ${initrd initrdPath}/initrd \
         -append "console=ttyS0,38400 tsc=unstable panic=-1 jobDesc=${desc}"
     '';
-  });
+  };
 
   evaluators = builtins.mapAttrs (_: prepareJob) (editEvaluators
     (import ./evaluators.nix { inherit pkgs; }));

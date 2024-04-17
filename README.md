@@ -3,6 +3,8 @@
 qeval is a toy to safely-ish (beware bugs and hardware limitations) execute malicious/untrusted code.
 It's inspired by [shbot](https://github.com/geirha/shbot), but none of the code was taken from there.
 
+qeval requires Nix 2.18 or older, or Nix 2.14 or older with the `discard-references` experimental feature enabled.
+
 There are currently evaluators for
 
 * Ash (from busybox)
