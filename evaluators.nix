@@ -109,14 +109,18 @@ with pkgs;
 
     command = ''
       mv "$1" /input.raw
-      cat - /input.raw > /input <<EOF
-        #include <complex.h>
-        #include <limits.h>
-        #include <math.h>
-        #include <stdio.h>
-        #include <stdlib.h>
-        #include <string.h>
+      if grep -q '^#' /input.raw; then
+        cat /input.raw
+      else
+        cat - /input.raw <<EOF
+          #include <complex.h>
+          #include <limits.h>
+          #include <math.h>
+          #include <stdio.h>
+          #include <stdlib.h>
+          #include <string.h>
       EOF
+      fi > /input
       gcc -x c -o /input.out -std=c11 -lm -Wall -Wextra -Wshadow -Wpedantic -pedantic-errors -fsanitize=address,undefined -fdiagnostics-color=never /input && /input.out
     '';
 
