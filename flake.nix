@@ -12,7 +12,7 @@
       inherit system;
       config = import ./nixpkgs-config.nix;
       overlays = [
-        inputs.nur.overlay
+        inputs.nur.overlays.default
         inputs.nixpkgs-mozilla.overlays.rust
         (self: super: {
           path = nixpkgs; # avoids needlessly copying the nixpkgs source for the nix evaluator
