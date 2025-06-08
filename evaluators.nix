@@ -1,5 +1,6 @@
 { pkgs }:
 with pkgs;
+with lib;
 
 {
   perl = {
@@ -153,7 +154,7 @@ with pkgs;
   tcc = {
     name = "tcc";
     mem = 50;
-    storeDrives.tcc = [ tinycc ];
+    storeDrives.tcc = [ (getBin tinycc) ];
     preCommand = ''
       echo 'int main() { return 0; }' > /tmp/sample
       tcc -run /tmp/sample
@@ -210,7 +211,7 @@ with pkgs;
 
     command = ''
       mv "$1" /input.kts
-      kotlinc -script /input.kts
+      kotlinc -script /input.kts 2> /dev/null
     '';
 
     testInput = ''println("success")'';
@@ -232,21 +233,21 @@ with pkgs;
     testInput = "print(\"success\")";
   };
 
-  python2 = {
-    name = "python2";
-    aliases = [ "py2" ];
-    mem = 75;
-    storeDrives.python2 = [ python2 ];
-    preCommand = ''
-      ${python2}/bin/python2 -c "print 42"
-    '';
-
-    command = ''
-      ${python2}/bin/python2 -c 'import sys;exec(compile(open(sys.argv[1]).read(), "input", "single"))' "$1"
-    '';
-
-    testInput = "print \"success\"";
-  };
+  # python2 = {
+  #   name = "python2";
+  #   aliases = [ "py2" ];
+  #   mem = 75;
+  #   storeDrives.python2 = [ python2 ];
+  #   preCommand = ''
+  #     ${python2}/bin/python2 -c "print 42"
+  #   '';
+  #
+  #   command = ''
+  #     ${python2}/bin/python2 -c 'import sys;exec(compile(open(sys.argv[1]).read(), "input", "single"))' "$1"
+  #   '';
+  #
+  #   testInput = "print \"success\"";
+  # };
 
   ruby = {
     name = "ruby";

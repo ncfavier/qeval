@@ -24,7 +24,7 @@ There are currently evaluators for
 * OCaml
 * Perl 5
 * PHP
-* Python 2
+* ~~Python 2~~
 * Python 3
 * Qalculate (which doesn't really need the sandboxing)
 * Racket

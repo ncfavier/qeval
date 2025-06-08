@@ -378,12 +378,12 @@ rec {
 
   suspensionWriteCommand =
     if suspensionUseCompression
-    then "${lz4}/bin/lz4 -3 --favor-decSpeed -"
+    then "${getExe lz4} -3 --favor-decSpeed -"
     else "cat >";
 
   suspensionReadCommand =
     if suspensionUseCompression
-    then "${lz4}/bin/lz4 -dc --favor-decSpeed"
+    then "${getExe lz4} -dc --favor-decSpeed"
     else "cat ";
 
   run = args@{ name, initrdPath, storeDrives, mem, desc, ... }: writeShellScriptBin "run-qemu" ''
